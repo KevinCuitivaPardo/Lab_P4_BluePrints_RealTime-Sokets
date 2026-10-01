@@ -202,3 +202,17 @@ npm run dev                  # http://localhost:5173
 - Con RT activo, el clic **no** pinta localmente: se publica el punto y se repinta con el `blueprint-update` / mensaje del tópico (fuente única de verdad, igual en todas las pestañas). Con `None` el punto se agrega localmente y se persiste con Save/Update.
 - Socket.IO: `join-room` se reemite en cada `connect` (reconexión). STOMP: `reconnectDelay` 1s y re-suscripción en `onConnect`.
 - El payload de actualización puede traer `points` (plano completo) o `point` (incremental); ambos se soportan.
+
+### Backend usado (extensión de Lab P1)
+El front consume `Lab_P1_BluePrints_Java21_API`, al que se añadió:
+- `PUT /api/v1/blueprints/{author}/{name}` (reemplaza los puntos) y `DELETE /api/v1/blueprints/{author}/{name}`.
+- STOMP en el mismo servidor: endpoint `/ws-blueprints`, publicar en `/app/draw`, suscribirse a `/topic/blueprints.{author}.{name}`. Persiste el punto (crea el plano si no existe) y emite el plano completo.
+- CORS para `http://localhost:5173`.
+
+```bash
+# backend (puerto 8080)
+mvn spring-boot:run
+# front (.env.local con VITE_API_BASE=http://localhost:8080 y VITE_STOMP_BASE=http://localhost:8080)
+npm run dev
+```
+Socket.IO sigue disponible en el selector pero requiere el backend Node de la guía (`VITE_IO_BASE`); con STOMP no hace falta nada más.

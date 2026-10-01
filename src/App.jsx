@@ -64,7 +64,7 @@ export default function App() {
   }
 
   const create = run(() => api.createBlueprint({ author, name, points }), 'Plano creado')
-  const save = run(() => api.updateBlueprint(author, name, { author, name, points }), 'Plano guardado')
+  const save = run(() => api.updateBlueprint(author, name, points), 'Plano guardado')
   const remove = run(async () => {
     await api.deleteBlueprint(author, name)
     setPoints([])
