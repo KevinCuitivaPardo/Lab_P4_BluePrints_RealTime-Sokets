@@ -43,7 +43,7 @@ export default function App() {
 
   const onUpdate = useCallback((upd) => {
     if (Array.isArray(upd.points)) setPoints(upd.points)
-    else if (upd.point) setPoints((prev) => [...prev, upd.point])
+    else if (upd.append?.length) setPoints((prev) => [...prev, ...upd.append])
   }, [])
 
   const { status, sendPoint } = useRealtime(tech, author, name, onUpdate)
@@ -51,6 +51,7 @@ export default function App() {
   function handlePoint(point) {
     if (tech === 'none') setPoints((prev) => [...prev, point])
     else if (!sendPoint(point)) fail(new Error('Sin conexión de tiempo real todavía'))
+    else if (tech === 'socketio') setPoints((prev) => [...prev, point]) // el server no hace eco al emisor
   }
 
   const run = (action, text) => async () => {

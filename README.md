@@ -242,3 +242,16 @@ Nota: con dos clientes dibujando a la vez, el orden de los puntos lo define el o
 | Integración | Ideal con Node | Natural con Spring (`@MessageMapping`, `SimpMessagingTemplate`) y comparte servicios/persistencia con el REST |
 | Estándar | Protocolo propio (cliente y servidor deben ser Socket.IO) | Estándar abierto, interoperable con otros brokers |
 | Decisión del equipo | — | Se eligió STOMP: el estado REST y el de tiempo real son el mismo servicio |
+
+### Socket.IO (backend guía `example-backend-socketio-node-`)
+Se usó el backend de la guía sin modificarlo; el front funciona con **ambas** tecnologías.
+```bash
+# backend Socket.IO (puerto 3001)
+git clone https://github.com/DECSIS-ECI/example-backend-socketio-node- && cd example-backend-socketio-node- && npm i && npm run dev
+# REST/CRUD sigue siendo el backend P1 (8080); VITE_IO_BASE=http://localhost:3001
+```
+Diferencias que el front resuelve:
+- El servidor hace `socket.to(room).emit(...)` → **no devuelve el punto a quien dibuja**, así que el front lo pinta localmente al hacer clic.
+- Emite solo los **puntos nuevos** (`points:[point]`), no el plano completo → el front los agrega (con STOMP el servidor envía el plano completo y se reemplaza).
+- No persiste ni valida: el estado inicial viene del REST (P1) y lo dibujado solo queda guardado tras **Save/Update**.
+- Prueba en 2 pestañas (autor `juan`, plano `plano-1`, 4 clics alternados): canvas idéntico en ambas. Si dos usuarios dibujan a la vez, el **orden de los puntos puede diferir** entre pestañas (cada una pone los suyos primero), algo que STOMP evita porque el servidor decide el orden.

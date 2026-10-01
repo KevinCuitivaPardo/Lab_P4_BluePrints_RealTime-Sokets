@@ -7,7 +7,7 @@ const STOMP_BASE = import.meta.env.VITE_STOMP_BASE ?? 'http://localhost:8080'
 
 /**
  * Conecta al plano `blueprints.{author}.{name}` con la tecnología elegida.
- * `onUpdate(upd)` recibe `{ points }` (plano completo) o `{ point }` (punto nuevo).
+ * `onUpdate(upd)` recibe `{ points }` (plano completo, STOMP) o `{ append }` (puntos nuevos, Socket.IO).
  * Devuelve `{ status, sendPoint }`.
  */
 export function useRealtime(tech, author, name, onUpdate) {
@@ -54,7 +54,8 @@ export function useRealtime(tech, author, name, onUpdate) {
       setStatus('connected')
     })
     socket.on('disconnect', () => setStatus('connecting'))
-    socket.on('blueprint-update', handle)
+    // El server Socket.IO envía solo los puntos nuevos y no se los devuelve a quien dibuja.
+    socket.on('blueprint-update', (upd) => handle({ append: upd.points ?? [] }))
     connRef.current = {
       send: (point) => {
         if (!socket.connected) return false
