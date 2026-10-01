@@ -175,3 +175,30 @@ En la interfaz: selecciona **Socket.IO** o **STOMP**, define `author` y `name`, 
 
 ## 📄 Licencia
 MIT (o la definida por el curso/equipo).
+
+---
+
+## 👥 README del equipo (implementación del Front)
+
+### Setup
+```bash
+cp .env.example .env.local   # ajusta URLs
+npm i
+npm run dev                  # http://localhost:5173
+```
+
+### Estructura
+- `src/App.jsx` — estado, barra de acciones (Create / Save/Update / Delete) y selector RT (None / Socket.IO / STOMP).
+- `src/components/BlueprintCanvas.jsx` — canvas con dibujo por clic.
+- `src/components/AuthorPanel.jsx` — tabla de planos y total de puntos (`reduce`).
+- `src/lib/api.js` — cliente REST (`VITE_API_BASE`).
+- `src/lib/useRealtime.js` — hook RT: conecta/desconecta según tecnología, autor y plano.
+
+### Endpoints usados
+`GET /api/blueprints?author=`, `GET|PUT|DELETE /api/blueprints/:author/:name`, `POST /api/blueprints`.
+
+### Decisiones
+- Sala/tópico por plano: `blueprints.{author}.{name}` (aislamiento entre planos).
+- Con RT activo, el clic **no** pinta localmente: se publica el punto y se repinta con el `blueprint-update` / mensaje del tópico (fuente única de verdad, igual en todas las pestañas). Con `None` el punto se agrega localmente y se persiste con Save/Update.
+- Socket.IO: `join-room` se reemite en cada `connect` (reconexión). STOMP: `reconnectDelay` 1s y re-suscripción en `onConnect`.
+- El payload de actualización puede traer `points` (plano completo) o `point` (incremental); ambos se soportan.
