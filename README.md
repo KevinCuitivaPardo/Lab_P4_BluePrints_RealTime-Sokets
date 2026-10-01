@@ -216,3 +216,29 @@ mvn spring-boot:run
 npm run dev
 ```
 Socket.IO sigue disponible en el selector pero requiere el backend Node de la guía (`VITE_IO_BASE`); con STOMP no hace falta nada más.
+
+### Observabilidad y seguridad mínima (backend)
+- Health check: `GET /actuator/health`.
+- Logs: conexión, suscripción y desconexión STOMP, y cada `draw` (`draw autor/plano -> N puntos`).
+- Validación: `/app/draw` ignora (con `warn`) payloads sin autor/plano/punto, con nombres > 100 caracteres o coordenadas fuera de ±10 000. CORS restringido a `http://localhost:5173`.
+
+### Hallazgos (STOMP, pruebas locales)
+| Prueba | Resultado |
+|---|---|
+| Latencia emisor → otro cliente (200 puntos secuenciales, localhost) | p50 ≈ 1.3 ms, p95 ≈ 2.5 ms, máx ≈ 46 ms |
+| Replicación entre 2 pestañas (navegador) | Canvas idéntico en ambas (mismos píxeles) |
+| Aislamiento por plano | Un cliente suscrito a otro plano no recibe nada |
+| Reconexión (servidor caído y vuelto a levantar) | El front pasa a `connecting` y vuelve a `connected` ~3 s después de que el servidor responde; se re-suscribe y el dibujo vuelve a replicarse |
+| Estado tras reiniciar el backend | Con persistencia en memoria se pierde lo no guardado; usar el perfil `postgres` para persistir |
+
+Nota: con dos clientes dibujando a la vez, el orden de los puntos lo define el orden de llegada al servidor.
+
+### Comparativa Socket.IO vs STOMP
+| | Socket.IO | STOMP |
+|---|---|---|
+| Modelo | Eventos propios + *rooms* (`join-room`, `draw-event`) | Protocolo de mensajería con destinos (`/app/*`, `/topic/*`) |
+| Aislamiento por plano | Room por plano; el servidor gestiona la membresía | Un tópico por plano; el broker gestiona la suscripción |
+| Reconexión | Integrada (hay que reenviar `join-room` en cada `connect`) | `reconnectDelay` de stompjs; hay que re-suscribir en `onConnect` |
+| Integración | Ideal con Node | Natural con Spring (`@MessageMapping`, `SimpMessagingTemplate`) y comparte servicios/persistencia con el REST |
+| Estándar | Protocolo propio (cliente y servidor deben ser Socket.IO) | Estándar abierto, interoperable con otros brokers |
+| Decisión del equipo | — | Se eligió STOMP: el estado REST y el de tiempo real son el mismo servicio |
